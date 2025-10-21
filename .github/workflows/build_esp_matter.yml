@@ -1,4 +1,4 @@
-name: Build ESP-Matter Light (ESP32-H2)
+name: Build ESP-Matter for ESP32-H2
 
 on:
   push:
@@ -11,40 +11,35 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Checkout repository (your fork)
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Setup ESP-IDF
-        uses: espressif/setup-idf@v1
+
+      - name: Set up ESP-IDF
+        uses: espressif/setup-idf@v3
         with:
-          version: 'v5.5.1'   # match your local ESP-IDF if you want
-          tools: 'esp32h2-elf' # toolchain set
+          version: 'v5.5.1'       
+          targets: 'esp32h2'       
 
       - name: Build example (light)
-        env:
-          IDF_PATH: ${{ steps.setup-idf.outputs.idf-path }}
         run: |
-          # go to example directory (change if you added a different example)
-          cd examples/light
+          cd examples/light    
           idf.py set-target esp32h2
-          idf.py fullclean || true
           idf.py build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: esp32h2-firmware
           path: |
             examples/light/build/bootloader/bootloader.bin
             examples/light/build/partition_table/partition-table.bin
-            examples/light/build/esp_ot_cli.bin || true
             examples/light/build/app.bin
-            examples/light/build/*.bin
