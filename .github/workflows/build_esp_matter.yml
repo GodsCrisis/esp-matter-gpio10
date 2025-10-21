@@ -1,4 +1,4 @@
-name: Build ESP-Matter for ESP32-H2
+name: ESP-Matter Build for ESP32-H2
 
 on:
   push:
@@ -8,38 +8,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-
       - name: Set up ESP-IDF
-        uses: espressif/setup-idf@v3
+        uses: espressif/github-actions/setup-idf@v1
         with:
-          version: 'v5.5.1'       
-          targets: 'esp32h2'       
+          version: v5.3
+          targets: esp32h2
 
-      - name: Build example (light)
+      - name: Build project
         run: |
-          cd examples/light    
+          cd examples/light
           idf.py set-target esp32h2
           idf.py build
 
-      - name: Upload build artifacts
+      - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
           name: esp32h2-firmware
           path: |
-            examples/light/build/bootloader/bootloader.bin
-            examples/light/build/partition_table/partition-table.bin
-            examples/light/build/app.bin
+            examples/light/build/*.bin
