@@ -13,10 +13,7 @@ jobs:
           sudo rm -rf /opt/ghc
           sudo rm -rf /usr/local/share/boost
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y '^llvm-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel
+          sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable firefox powershell mono-devel 2>/dev/null || true
           sudo apt-get autoremove -y
           sudo apt-get clean
           df -h
@@ -27,12 +24,25 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       
-      - name: Build ESP-IDF project
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.4.1
-          target: esp32h2
-          path: 'examples/light'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
+      
+      - name: Set up ESP-IDF
+        run: |
+          mkdir -p ~/esp
+          cd ~/esp
+          git clone --recursive --branch v5.4.1 --depth 1 https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          ./install.sh esp32h2
+      
+      - name: Build Matter project
+        run: |
+          source ~/esp/esp-idf/export.sh
+          cd examples/light
+          idf.py set-target esp32h2
+          idf.py build
       
       - name: Upload firmware binaries
         uses: actions/upload-artifact@v4
@@ -40,3 +50,6 @@ jobs:
           name: esp32h2-firmware
           path: |
             examples/light/build/*.bin
+            examples/light/build/*.elf
+            examples/light/build/bootloader/bootloader.bin
+            examples/light/build/partition_table/partition-table.bin
