@@ -1,39 +1,25 @@
 name: Build ESP-Matter for ESP32-H2
-
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      
+      - name: Build ESP-IDF project
+        uses: espressif/esp-idf-ci-action@v1
         with:
-          python-version: '3.11'
-
-
-      - name: Set up ESP-IDF
-        uses: espressif/github-actions/setup-idf@v1
-        with:
-          version: v5.3
-          targets: esp32h2
-
-      - name: Build Matter project
-        run: |
-          cd examples/light
-          idf.py set-target esp32h2
-          idf.py build
-
+          esp_idf_version: v5.4.1
+          target: esp32h2
+          path: 'examples/light'
+      
       - name: Upload firmware binaries
         uses: actions/upload-artifact@v4
         with:
