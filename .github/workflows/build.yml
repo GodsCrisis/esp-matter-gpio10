@@ -92,37 +92,38 @@ jobs:
           cd $GITHUB_WORKSPACE
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos set-target esp32h2
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos build
-      - name: Prepare artifacts
+      - name: Prepare firmware info file
         run: |
-          cd examples/gpio10_nmos/build
-          
-          # Create firmware info file
-          cat > FLASH_INSTRUCTIONS.txt << 'EOF'
+          mkdir -p examples/gpio10_nmos/build
+          cat > examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt << 'EOF'
           ESP32-H2 GPIO10 NMOS Controller - Firmware Flash Instructions
           ============================================================
-          
+
           Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
           Commit: ${{ github.sha }}
           Target: ESP32-H2
-          
+
           FLASH COMMANDS:
           ===============
-          
+
           Method 1: Using esptool.py
           --------------------------
-          esptool.py -p /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset --chip esp32h2 write_flash --flash_mode dio --flash_size 4MB --flash_freq 48m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 gpio10_nmos.bin
-          
+          esptool.py -p /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset --chip esp32h2 write_flash --flash_mode dio --flash_size 4MB --flash_freq 48m \
+            0x0 bootloader/bootloader.bin \
+            0x8000 partition_table/partition-table.bin \
+            0x10000 gpio10_nmos.bin
+
           Method 2: Using idf.py (in project directory)
           ---------------------------------------------
           idf.py -p /dev/ttyUSB0 flash
-          
+
           BINARIES INCLUDED:
           ==================
           - bootloader.bin          : Bootloader
           - partition-table.bin     : Partition table
-          - gpio10_nmos.bin        : Main application
-          - *.elf                  : Debug symbols (for debugging)
-          
+          - gpio10_nmos.bin         : Main application
+          - *.elf                   : Debug symbols (for debugging)
+
           WIRING REMINDER:
           ================
           GPIO10 ──[100Ω]──┬──── NMOS Gate
@@ -130,14 +131,14 @@ jobs:
                         [10kΩ]
                            │
                           GND
-          
+
           NMOS Source ───── GND (common with ESP32!)
           NMOS Drain ────── Load (+)
           Load (−) ──────── Power Supply (+)
-          
+
           IMPORTANT: ESP32 GND and Power Supply GND must be connected!
           EOF
-      
+
       - name: Prepare and upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -146,6 +147,7 @@ jobs:
             examples/gpio10_nmos/build/*.bin
             examples/gpio10_nmos/build/bootloader/*.bin
             examples/gpio10_nmos/build/partition_table/*.bin
+            examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
       
       - name: Build summary
         if: always()
