@@ -79,23 +79,17 @@ jobs:
           else
             echo "activate.sh not found!" && exit 1
           fi
-      - name: Build firmware
+      - name: Build Firmware
         run: |
           set -e
-          echo "=== Activating ESP-IDF ==="
           source ~/esp/esp-idf/export.sh
-
-          echo "=== Fixing permissions ==="
-          chmod +x ./connectedhomeip/connectedhomeip/scripts/activate.sh
-
-          echo "=== Activating ESP-Matter environment and building ==="
-          cd $GITHUB_WORKSPACE
-          ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos set-target esp32h2
-          ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos build
+          source ./export.sh 
+          cd examples/gpio10_nmos
+          idf.py set-target esp32h2
+          idf.py build
       - name: Debug:locate firmware binaries
         run: |
           echo "Current directory: $(pwd)"
-          echo "Searching for all .bin and .elf files..."
           find . -type f \( -name "*.bin" -o -name "*.elf" \) | sort
       - name: Prepare firmware info file
         run: |
@@ -110,31 +104,45 @@ jobs:
 
           FLASH COMMANDS:
           ===============
+
+          Method 1: Using esptool.py
+          --------------------------
           esptool.py -p /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset --chip esp32h2 write_flash \
+            --flash_mode dio --flash_size 4MB --flash_freq 48m \
             0x0 bootloader/bootloader.bin \
             0x8000 partition_table/partition-table.bin \
             0x10000 gpio10_nmos.bin
 
-          Method 2: Using idf.py
-          ----------------------
+          Method 2: Using idf.py (in project directory)
+          ---------------------------------------------
           idf.py -p /dev/ttyUSB0 flash
+
+          Method 3: Using ESP Launchpad
+          -----------------------------
+          1. Go to https://espressif.github.io/esp-launchpad/
+          2. Connect your ESP32-H2 via USB.
+          3. Upload 'gpio10_nmos.bin' and associated bootloader/partition binaries.
+          4. Flash and monitor directly in browser!
 
           BINARIES INCLUDED:
           ==================
           - bootloader.bin
           - partition-table.bin
           - gpio10_nmos.bin
-          - *.elf
+          - gpio10_nmos.elf
 
-          ESP Launchpad Support:
-          ======================
-          - Target: ESP32-H2
-          - Baud Rate: 460800
-          - Flash Mode: DIO
-          - Flash Files:
-              0x0 bootloader/bootloader.bin
-              0x8000 partition_table/partition-table.bin
-              0x10000 gpio10_nmos.bin
+          WIRING REMINDER:
+          ================
+          GPIO10 ──[100Ω]──┬──── NMOS Gate
+                           │
+                        [10kΩ]
+                           │
+                          GND
+
+          NMOS Source ───── GND
+          NMOS Drain ────── Load (+)
+          Load (−) ──────── Power Supply (+)
+          GND (ESP32) and Supply GND must be common!
           EOF
       - name: Debug build output
         run: |
