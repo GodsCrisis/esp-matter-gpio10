@@ -76,25 +76,10 @@ jobs:
       - name: Build firmware
         run: |
           set -e
-          echo "=== Activating ESP-IDF ==="
           source ~/esp/esp-idf/export.sh
-
-          echo "=== Activating ESP-Matter ==="
           cd $GITHUB_WORKSPACE
-          source ./export.sh
-
-          echo "=== Navigating to project ==="
-          cd examples/gpio10_nmos
-
-          echo "Setting target to ESP32-H2..."
-          idf.py set-target esp32h2
-
-          echo "Building firmware..."
-          idf.py build
-
-          echo "=== Build complete! ==="
-          ls -lh build/*.bin
-      
+          ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos set-target esp32h2
+          ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos build
       - name: Prepare artifacts
         run: |
           cd examples/gpio10_nmos/build
