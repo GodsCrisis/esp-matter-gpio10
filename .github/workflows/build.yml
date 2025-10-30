@@ -83,10 +83,11 @@ jobs:
         run: |
           set -e
           source ~/esp/esp-idf/export.sh
-          source ./export.sh 
-          cd examples/gpio10_nmos
-          idf.py set-target esp32h2
-          idf.py build
+          source ./export.sh
+          PROJECT_DIR=$GITHUB_WORKSPACE/examples/gpio10_nmos
+          echo "Building project at: $PROJECT_DIR"
+          idf.py -C "$PROJECT_DIR" set-target esp32h2
+          idf.py -C "$PROJECT_DIR" build
       - name: Debug:locate firmware binaries
         run: |
           echo "Current directory: $(pwd)"
