@@ -72,11 +72,23 @@ jobs:
           echo "Installing ESP-Matter dependencies..."
           ./install.sh
           echo "ESP-Matter installation complete"
-      
+      - name: Ensure activate.sh is executable
+        run: |
+          if [ -f ./connectedhomeip/connectedhomeip/scripts/activate.sh ]; then
+            chmod +x ./connectedhomeip/connectedhomeip/scripts/activate.sh
+          else
+            echo "activate.sh not found!" && exit 1
+          fi
       - name: Build firmware
         run: |
           set -e
+          echo "=== Activating ESP-IDF ==="
           source ~/esp/esp-idf/export.sh
+
+          echo "=== Fixing permissions ==="
+          chmod +x ./connectedhomeip/connectedhomeip/scripts/activate.sh
+
+          echo "=== Activating ESP-Matter environment and building ==="
           cd $GITHUB_WORKSPACE
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos set-target esp32h2
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos build
