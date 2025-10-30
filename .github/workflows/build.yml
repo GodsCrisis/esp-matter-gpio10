@@ -1,0 +1,170 @@
+name: Build ESP32-H2 GPIO10 NMOS Controller
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' 'php.*' azure-cli google-chrome-stable firefox powershell mono-devel 2>/dev/null || true
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          df -h
+      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv \
+            cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0 \
+            git-lfs pkg-config libglib2.0-dev libpixman-1-dev libgcrypt20-dev
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install ESP-IDF v5.4.1
+        run: |
+          mkdir -p ~/esp
+          cd ~/esp
+          echo "Cloning ESP-IDF v5.4.1..."
+          git clone --recursive --shallow-submodules --branch v5.4.1 --depth 1 https://github.com/espressif/esp-idf.git
+          cd esp-idf
+          echo "Installing ESP-IDF tools for ESP32-H2..."
+          ./install.sh esp32h2
+          echo "ESP-IDF installation complete"
+      
+      - name: Install ESP-Matter dependencies
+        run: |
+          # Install in the current repository
+          echo "Installing ESP-Matter dependencies..."
+          ./install.sh
+          echo "ESP-Matter installation complete"
+      
+      - name: Build firmware
+        run: |
+          # Source ESP-IDF
+          source ~/esp/esp-idf/export.sh
+          
+          # Source ESP-Matter (from current repo)
+          source ./export.sh
+          
+          # Navigate to project
+          cd examples/gpio10_nmos
+          
+          # Set target
+          echo "Setting target to ESP32-H2..."
+          idf.py set-target esp32h2
+          
+          # Build
+          echo "Building firmware..."
+          idf.py build
+          
+          # Show build info
+          echo "Build complete! Firmware size:"
+          ls -lh build/*.bin
+      
+      - name: Prepare artifacts
+        run: |
+          cd examples/gpio10_nmos/build
+          
+          # Create firmware info file
+          cat > FLASH_INSTRUCTIONS.txt << 'EOF'
+          ESP32-H2 GPIO10 NMOS Controller - Firmware Flash Instructions
+          ============================================================
+          
+          Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          Commit: ${{ github.sha }}
+          Target: ESP32-H2
+          
+          FLASH COMMANDS:
+          ===============
+          
+          Method 1: Using esptool.py
+          --------------------------
+          esptool.py -p /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset --chip esp32h2 write_flash --flash_mode dio --flash_size 4MB --flash_freq 48m 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 gpio10_nmos.bin
+          
+          Method 2: Using idf.py (in project directory)
+          ---------------------------------------------
+          idf.py -p /dev/ttyUSB0 flash
+          
+          BINARIES INCLUDED:
+          ==================
+          - bootloader.bin          : Bootloader
+          - partition-table.bin     : Partition table
+          - gpio10_nmos.bin        : Main application
+          - *.elf                  : Debug symbols (for debugging)
+          
+          WIRING REMINDER:
+          ================
+          GPIO10 ──[100Ω]──┬──── NMOS Gate
+                           │
+                        [10kΩ]
+                           │
+                          GND
+          
+          NMOS Source ───── GND (common with ESP32!)
+          NMOS Drain ────── Load (+)
+          Load (−) ──────── Power Supply (+)
+          
+          IMPORTANT: ESP32 GND and Power Supply GND must be connected!
+          EOF
+      
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32h2-gpio10-nmos-firmware
+          path: |
+            examples/gpio10_nmos/build/*.bin
+            examples/gpio10_nmos/build/*.elf
+            examples/gpio10_nmos/build/bootloader/bootloader.bin
+            examples/gpio10_nmos/build/partition_table/partition-table.bin
+            examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
+          retention-days: 90
+      
+      - name: Build summary
+        if: always()
+        run: |
+          echo "#Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" == "success" ]; then
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            echo "- **Target:** ESP32-H2" >> $GITHUB_STEP_SUMMARY
+            echo "- **Project:** GPIO10 NMOS PWM Controller" >> $GITHUB_STEP_SUMMARY
+            echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo " Download Firmware" >> $GITHUB_STEP_SUMMARY
+            echo "Firmware binaries are available in the **Artifacts** section below." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Quick Flash Command" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "cd examples/gpio10_nmos" >> $GITHUB_STEP_SUMMARY
+            echo "idf.py -p /dev/ttyUSB0 flash monitor" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo " Build Status: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Check the build logs above for error details." >> $GITHUB_STEP_SUMMARY
+          fi
