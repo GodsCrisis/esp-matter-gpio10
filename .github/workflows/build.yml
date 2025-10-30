@@ -92,6 +92,11 @@ jobs:
           cd $GITHUB_WORKSPACE
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos set-target esp32h2
           ./connectedhomeip/connectedhomeip/scripts/activate.sh idf.py -C examples/gpio10_nmos build
+      - name: Debug:locate firmware binaries
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Searching for all .bin and .elf files..."
+          find . -type f \( -name "*.bin" -o -name "*.elf" \) | sort
       - name: Prepare firmware info file
         run: |
           mkdir -p examples/gpio10_nmos/build
