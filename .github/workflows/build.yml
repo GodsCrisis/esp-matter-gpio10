@@ -138,17 +138,14 @@ jobs:
           IMPORTANT: ESP32 GND and Power Supply GND must be connected!
           EOF
       
-      - name: Upload firmware artifacts
+      - name: Prepare and upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: esp32h2-gpio10-nmos-firmware
+          name: gpio10_nmos_firmware
           path: |
             examples/gpio10_nmos/build/*.bin
-            examples/gpio10_nmos/build/*.elf
-            examples/gpio10_nmos/build/bootloader/bootloader.bin
-            examples/gpio10_nmos/build/partition_table/partition-table.bin
-            examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
-          retention-days: 90
+            examples/gpio10_nmos/build/bootloader/*.bin
+            examples/gpio10_nmos/build/partition_table/*.bin
       
       - name: Build summary
         if: always()
