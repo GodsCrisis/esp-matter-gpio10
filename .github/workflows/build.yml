@@ -82,10 +82,19 @@ jobs:
       - name: Build Firmware
         run: |
           set -e
+          echo "Deactivating any Pigweed or CHIP Python venv..."
+          deactivate 2>/dev/null || true
+          unset VIRTUAL_ENV PW_PROJECT_ROOT PW_ROOT PW_PACKAGE_ROOT
+          
+          echo "Activating ESP-IDF + ESP-Matter..."
           source ~/esp/esp-idf/export.sh
           source ./export.sh
+          
           PROJECT_DIR=$GITHUB_WORKSPACE/examples/gpio10_nmos
           echo "Building project at: $PROJECT_DIR"
+          ls -la "$PROJECT_DIR"
+          cat "$PROJECT_DIR/CMakeLists.txt" | head -n 10 || echo " No CMakeLists.txt found!"
+
           idf.py -C "$PROJECT_DIR" set-target esp32h2
           idf.py -C "$PROJECT_DIR" build
       - name: Debug:locate firmware binaries
