@@ -34,8 +34,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: recursive
-          fetch-depth: 0
+          submodules: true
+
+      - name: Ensure submodules are initialized
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
       
       - name: Install system dependencies
         run: |
@@ -167,6 +171,7 @@ jobs:
             examples/gpio10_nmos/build/bootloader/*.bin
             examples/gpio10_nmos/build/partition_table/*.bin
             examples/gpio10_nmos/build/*.elf
+            examples/gpio10_nmos/build/*.map
             examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
       
       - name: Build summary
