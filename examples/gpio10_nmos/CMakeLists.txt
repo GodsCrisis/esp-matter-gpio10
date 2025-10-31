@@ -1,16 +1,14 @@
-
 cmake_minimum_required(VERSION 3.5)
 
+set(PROJECT_NAME "gpio10_nmos")
 
-include($ENV{ESP_MATTER_PATH}/connectedhomeip/connectedhomeip/config/esp32/components/chip/CMakeLists.txt)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 include($ENV{ESP_MATTER_PATH}/esp_matter.cmake)
+include($ENV{ESP_MATTER_PATH}/connectedhomeip/connectedhomeip/config/esp32/components/chip/CMakeLists.txt)
 
 set(EXTRA_COMPONENT_DIRS
     "${ESP_MATTER_PATH}/examples/common"
     "${ESP_MATTER_PATH}/components"
-    "${CMAKE_CURRENT_LIST_DIR}/../../components"
 )
 
-project(gpio10_nmos)
-
-idf_build_set_property(PARTITION_TABLE_FILE ${CMAKE_CURRENT_LIST_DIR}/partitions.csv APPEND)
+project(${PROJECT_NAME})
