@@ -9,9 +9,5 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 include($ENV{ESP_MATTER_PATH}/esp_matter.cmake)
 
 
-set(EXTRA_COMPONENT_DIRS
-    "${ESP_MATTER_PATH}/examples/common"
-)
-
-
 project(${PROJECT_NAME})
+
