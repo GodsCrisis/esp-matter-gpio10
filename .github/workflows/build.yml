@@ -94,7 +94,7 @@ jobs:
           source ~/esp/esp-idf/export.sh
           source ./export.sh
           
-          PROJECT_DIR=$GITHUB_WORKSPACE/examples/gpio10_nmos
+          PROJECT_DIR=$GITHUB_WORKSPACE/examples/all_device_types_app
           echo "Building project at: $PROJECT_DIR"
           ls -la "$PROJECT_DIR"
           cat "$PROJECT_DIR/CMakeLists.txt" | head -n 10 || echo " No CMakeLists.txt found!"
