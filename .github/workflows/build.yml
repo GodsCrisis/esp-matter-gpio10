@@ -107,9 +107,9 @@ jobs:
           find . -type f \( -name "*.bin" -o -name "*.elf" \) | sort
       - name: Prepare firmware info file
         run: |
-          mkdir -p examples/gpio10_nmos/build
-          cat > examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt << 'EOF'
-          ESP32-H2 GPIO10 NMOS Controller - Firmware Flash Instructions
+          mkdir -p examples/all_device_types_app/build
+          cat > examples/all_device_types_app/build/FLASH_INSTRUCTIONS.txt << 'EOF'
+          ESP32-H2 All Device Types App - Firmware Flash Instructions
           ============================================================
 
           Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
@@ -119,44 +119,14 @@ jobs:
           FLASH COMMANDS:
           ===============
 
-          Method 1: Using esptool.py
-          --------------------------
-          esptool.py -p /dev/ttyUSB0 -b 460800 --before default_reset --after hard_reset --chip esp32h2 write_flash \
-            --flash_mode dio --flash_size 4MB --flash_freq 48m \
-            0x0 bootloader/bootloader.bin \
-            0x8000 partition_table/partition-table.bin \
-            0x10000 gpio10_nmos.bin
-
-          Method 2: Using idf.py (in project directory)
-          ---------------------------------------------
-          idf.py -p /dev/ttyUSB0 flash
-
-          Method 3: Using ESP Launchpad
-          -----------------------------
-          1. Go to https://espressif.github.io/esp-launchpad/
-          2. Connect your ESP32-H2 via USB.
-          3. Upload 'gpio10_nmos.bin' and associated bootloader/partition binaries.
-          4. Flash and monitor directly in browser!
+          idf.py -p /dev/ttyUSB0 flash monitor
 
           BINARIES INCLUDED:
           ==================
           - bootloader.bin
           - partition-table.bin
-          - gpio10_nmos.bin
-          - gpio10_nmos.elf
-
-          WIRING REMINDER:
-          ================
-          GPIO10 ──[100Ω]──┬──── NMOS Gate
-                           │
-                        [10kΩ]
-                           │
-                          GND
-
-          NMOS Source ───── GND
-          NMOS Drain ────── Load (+)
-          Load (−) ──────── Power Supply (+)
-          GND (ESP32) and Supply GND must be common!
+          - all_device_types_app.bin
+          - all_device_types_app.elf
           EOF
       - name: Debug build output
         run: |
@@ -165,15 +135,17 @@ jobs:
       - name: Prepare and upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: gpio10_nmos_firmware
+          name: all_device_types_app_firmware
           path: |
-            examples/gpio10_nmos/build/*.bin
-            examples/gpio10_nmos/build/bootloader/*.bin
-            examples/gpio10_nmos/build/partition_table/*.bin
-            examples/gpio10_nmos/build/*.elf
-            examples/gpio10_nmos/build/*.map
-            examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
-      
+            examples/all_device_types_app/build/*.bin
+            examples/all_device_types_app/build/bootloader/*.bin
+            examples/all_device_types_app/build/partition_table/*.bin
+            examples/all_device_types_app/build/*.elf
+            examples/all_device_types_app/build/*.map
+            examples/all_device_types_app/build/FLASH_INSTRUCTIONS.txt
+      - name: Disable cache compression (prevent disk overflow)
+        run: |
+          echo "ACTIONS_CACHE_COMPRESSION_LEVEL=0" >> $GITHUB_ENV
       - name: Build summary
         if: always()
         run: |
