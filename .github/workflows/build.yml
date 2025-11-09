@@ -52,7 +52,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+      - name: Disable cache compression to save disk space
+        run: |
+          echo "ACTIONS_CACHE_COMPRESSION_LEVEL=0" >> $GITHUB_ENV
       - name: Cache ESP-IDF tools
         uses: actions/cache@v4
         with:
