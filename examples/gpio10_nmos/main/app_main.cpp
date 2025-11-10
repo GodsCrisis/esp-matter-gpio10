@@ -17,22 +17,18 @@ using namespace esp_matter::attribute;
 using namespace esp_matter::endpoint;
 using namespace chip::app::Clusters;
 
-
 constexpr gpio_num_t NMOS_GATE_GPIO = GPIO_NUM_10;
 constexpr ledc_channel_t PWM_CHANNEL = LEDC_CHANNEL_0;
 constexpr ledc_timer_t PWM_TIMER = LEDC_TIMER_0;
 constexpr uint32_t PWM_FREQUENCY = 1000;  
 constexpr ledc_timer_bit_t PWM_RESOLUTION = LEDC_TIMER_10_BIT;  
 
-
 static uint16_t light_endpoint_id = 0;
 static uint16_t current_level = 0;  
 static bool power_state = false;
 
-
 static void app_driver_nmos_init()
 {
-
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .duty_resolution = PWM_RESOLUTION,
@@ -41,7 +37,6 @@ static void app_driver_nmos_init()
         .clk_cfg = LEDC_AUTO_CLK
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
-
 
     ledc_channel_config_t ledc_channel = {
         .gpio_num = NMOS_GATE_GPIO,
@@ -58,7 +53,6 @@ static void app_driver_nmos_init()
     ESP_LOGI(TAG, "PWM: %ldHz, %d-bit resolution", PWM_FREQUENCY, PWM_RESOLUTION);
 }
 
-
 static void app_driver_nmos_set_duty(uint16_t duty)
 {
     ledc_set_duty(LEDC_LOW_SPEED_MODE, PWM_CHANNEL, duty);
@@ -68,19 +62,16 @@ static void app_driver_nmos_set_duty(uint16_t duty)
     ESP_LOGI(TAG, "NMOS gate PWM set to %d/1023 (%.1f%% duty)", duty, duty_percent);
 }
 
-
 static void app_driver_nmos_set_power(bool power)
 {
     power_state = power;
     
     if (power) {
-
         uint16_t duty = (current_level > 0) ? current_level : 512;
         current_level = duty;
         app_driver_nmos_set_duty(duty);
         ESP_LOGI(TAG, "NMOS turned ON at %d/1023", duty);
     } else {
-
         app_driver_nmos_set_duty(0);
         ESP_LOGI(TAG, "NMOS turned OFF");
     }
@@ -88,7 +79,6 @@ static void app_driver_nmos_set_power(bool power)
 
 static void app_driver_nmos_set_level(uint8_t level)
 {
-
     current_level = (level * 1023) / 255;
     
     if (power_state) {
@@ -98,16 +88,14 @@ static void app_driver_nmos_set_level(uint8_t level)
     ESP_LOGI(TAG, "NMOS level set to %d/255 (PWM: %d/1023)", level, current_level);
 }
 
-
 static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16_t endpoint_id, uint32_t cluster_id,
                                          uint32_t attribute_id, esp_matter_attr_val_t *val, void *priv_data)
 {
     esp_err_t err = ESP_OK;
 
     if (type == PRE_UPDATE) {
-
+        // Pre-update logic if needed
     } else {
-
         if (cluster_id == OnOff::Id) {
             if (attribute_id == OnOff::Attributes::OnOff::Id) {
                 ESP_LOGI(TAG, "OnOff attribute update: %d", val->val.b);
@@ -125,14 +113,12 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
     return err;
 }
 
-
 static esp_err_t app_identification_cb(identification::callback_type_t type, uint16_t endpoint_id,
                                        uint8_t effect_id, uint8_t effect_variant, void *priv_data)
 {
     ESP_LOGI(TAG, "Identification callback: type: %u, effect: %u", type, effect_id);
     return ESP_OK;
 }
-
 
 static void app_create_endpoint()
 {
@@ -142,12 +128,14 @@ static void app_create_endpoint()
         return;
     }
 
-
+    // Create extended color light endpoint configuration
     extended_color_light::config_t light_config;
     light_config.on_off.on_off = DEFAULT_POWER;
     light_config.on_off.lighting.start_up_on_off = nullptr;
-    light_config.level_control.current_level = 0;  // Start at 0% (NMOS OFF)
-    light_config.level_control.lighting.start_up_current_level = 0;
+    
+    // Set current level using nullable type (cast to uint8_t)
+    light_config.level_control.current_level = static_cast<uint8_t>(0);
+    light_config.level_control.start_up_current_level = nullptr;
 
     endpoint_t *endpoint = extended_color_light::create(node, &light_config, ENDPOINT_FLAG_NONE, NULL);
     
@@ -159,7 +147,6 @@ static void app_create_endpoint()
     light_endpoint_id = endpoint::get_id(endpoint);
     ESP_LOGI(TAG, "NMOS PWM controller endpoint created with endpoint_id %d", light_endpoint_id);
 
-
     cluster_t *cluster = cluster::get(endpoint, OnOff::Id);
     cluster::add_function_list(cluster, NULL, 0);
 }
@@ -168,7 +155,7 @@ extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
 
-
+    // Initialize NVS
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -176,10 +163,10 @@ extern "C" void app_main()
     }
     ESP_ERROR_CHECK(err);
 
-
+    // Initialize NMOS driver
     app_driver_nmos_init();
 
-
+    // Create Matter node
     node::config_t node_config;
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     if (!node) {
@@ -187,20 +174,17 @@ extern "C" void app_main()
         return;
     }
 
-
+    // Create endpoint
     app_create_endpoint();
 
-
-    esp_matter::set_custom_dac_provider(chip::Credentials::Examples::GetExampleDACProvider());
-
-
-    err = esp_matter::start(app_attribute_update_cb);
+    // Start Matter stack (v4.x API - no callback parameter)
+    err = esp_matter::start(nullptr);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Matter start failed: %d", err);
         return;
     }
 
-
+    // Register reset button
     app_reset_button_register();
 
     ESP_LOGI(TAG, "===================================================");
