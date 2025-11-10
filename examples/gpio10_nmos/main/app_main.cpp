@@ -131,11 +131,11 @@ static void app_create_endpoint()
     // Create extended color light endpoint configuration
     extended_color_light::config_t light_config;
     light_config.on_off.on_off = DEFAULT_POWER;
-    light_config.on_off.lighting.start_up_on_off = nullptr;
+   // light_config.on_off.lighting.start_up_on_off = nullptr;
     
     // Set current level using nullable type (cast to uint8_t)
     light_config.level_control.current_level = static_cast<uint8_t>(0);
-    light_config.level_control.start_up_current_level = nullptr;
+   // light_config.level_control.start_up_current_level = nullptr;
 
     endpoint_t *endpoint = extended_color_light::create(node, &light_config, ENDPOINT_FLAG_NONE, NULL);
     
