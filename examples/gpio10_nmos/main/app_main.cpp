@@ -7,7 +7,6 @@
 #include <esp_matter_ota.h>
 
 #include <app_priv.h>
-#include <app_reset.h>
 #include <driver/ledc.h>
 
 static const char *TAG = "app_main";
@@ -94,7 +93,7 @@ static esp_err_t app_attribute_update_cb(attribute::callback_type_t type, uint16
     esp_err_t err = ESP_OK;
 
     if (type == PRE_UPDATE) {
-        // Pre-update logic if needed
+
     } else {
         if (cluster_id == OnOff::Id) {
             if (attribute_id == OnOff::Attributes::OnOff::Id) {
@@ -128,14 +127,12 @@ static void app_create_endpoint()
         return;
     }
 
-    // Create extended color light endpoint configuration
+
     extended_color_light::config_t light_config;
     light_config.on_off.on_off = DEFAULT_POWER;
-   // light_config.on_off.lighting.start_up_on_off = nullptr;
     
-    // Set current level using nullable type (cast to uint8_t)
+
     light_config.level_control.current_level = static_cast<uint8_t>(0);
-   // light_config.level_control.start_up_current_level = nullptr;
 
     endpoint_t *endpoint = extended_color_light::create(node, &light_config, ENDPOINT_FLAG_NONE, NULL);
     
@@ -155,7 +152,7 @@ extern "C" void app_main()
 {
     esp_err_t err = ESP_OK;
 
-    // Initialize NVS
+
     err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -163,10 +160,9 @@ extern "C" void app_main()
     }
     ESP_ERROR_CHECK(err);
 
-    // Initialize NMOS driver
     app_driver_nmos_init();
 
-    // Create Matter node
+
     node::config_t node_config;
     node_t *node = node::create(&node_config, app_attribute_update_cb, app_identification_cb);
     if (!node) {
@@ -174,18 +170,17 @@ extern "C" void app_main()
         return;
     }
 
-    // Create endpoint
+
     app_create_endpoint();
 
-    // Start Matter stack (v4.x API - no callback parameter)
+
     err = esp_matter::start(nullptr);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Matter start failed: %d", err);
         return;
     }
 
-    // Register reset button
-    app_reset_button_register();
+
 
     ESP_LOGI(TAG, "===================================================");
     ESP_LOGI(TAG, "Matter GPIO10 NMOS PWM Controller Started");
@@ -193,4 +188,5 @@ extern "C" void app_main()
     ESP_LOGI(TAG, "Control via Matter (Google Home/ESPRainmaker)");
     ESP_LOGI(TAG, "Frequency: %ldHz, Resolution: 10-bit (0-1023)", PWM_FREQUENCY);
     ESP_LOGI(TAG, "===================================================");
+    ESP_LOGI(TAG, "NOTE: Factory reset button disabled in this build");
 }
