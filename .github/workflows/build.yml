@@ -23,7 +23,7 @@ jobs:
                 /usr/local/lib/node_modules \
                 /opt/hostedtoolcache \
                 "$AGENT_TOOLSDIRECTORY"
-            sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' '^php.*' \
+          sudo apt-get remove -y '^dotnet-.*' '^llvm-.*' '^php.*' \
               azure-cli google-chrome-stable firefox powershell mono-devel \
               2>/dev/null || true
           sudo apt-get autoremove -y
@@ -39,7 +39,7 @@ jobs:
       - name: Ensure submodules are initialized
         run: |
           git submodule sync --recursive
-          git submodule update --init --recursive
+          git submodule update --init --recursive --depth 1
       
       - name: Install system dependencies
         run: |
@@ -71,13 +71,16 @@ jobs:
           echo "Installing ESP-IDF tools for ESP32-H2..."
           ./install.sh esp32h2
           echo "ESP-IDF installation complete"
+          rm -rf .git
+          df -h
       
       - name: Install ESP-Matter dependencies
         run: |
-          # Install in the current repository
           echo "Installing ESP-Matter dependencies..."
           ./install.sh
           echo "ESP-Matter installation complete"
+          pip cache purge || true
+          df -h
       - name: Ensure activate.sh is executable
         run: |
           if [ -f ./connectedhomeip/connectedhomeip/scripts/activate.sh ]; then
@@ -87,7 +90,7 @@ jobs:
           fi
       - name: Build Firmware
         run: |
-          set +e  # disable immediate exit so we can print logs on error
+          set +e
           echo "Deactivating any Pigweed or CHIP Python venv..."
           deactivate 2>/dev/null || true
           unset VIRTUAL_ENV PW_PROJECT_ROOT PW_ROOT PW_PACKAGE_ROOT
@@ -105,6 +108,8 @@ jobs:
           echo "Building project at: $PROJECT_DIR"
           ls -la "$PROJECT_DIR"
           cat "$PROJECT_DIR/CMakeLists.txt" | head -n 10 || echo " No CMakeLists.txt found!"
+          
+          df -h
 
           idf.py -C "$PROJECT_DIR" set-target esp32h2
           idf.py -C "$PROJECT_DIR" fullclean
@@ -125,12 +130,9 @@ jobs:
           find . -type f \( -name "*.bin" -o -name "*.elf" \) | sort
       - name: Prepare firmware info file
         run: |
-
           mkdir -p examples/gpio10_nmos/build
 
-
           cat > examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt << 'EOF'
-
 
           ESP32-H2 GPIO10 NMOS Controller - Firmware Flash Instructions
           ============================================================
