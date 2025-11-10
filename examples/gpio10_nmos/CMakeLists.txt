@@ -1,14 +1,52 @@
+# CMake configuration for gpio10_nmos example
 cmake_minimum_required(VERSION 3.5)
 
-set(PROJECT_NAME "gpio10_nmos")
+# --- Ensure required paths exist ---
+if(NOT DEFINED ENV{ESP_MATTER_PATH})
+    message(FATAL_ERROR "Please set ESP_MATTER_PATH to the path of esp-matter repo")
+endif()
 
+# Select device HAL automatically based on IDF_TARGET
+if(NOT DEFINED ENV{ESP_MATTER_DEVICE_PATH})
+    if("${IDF_TARGET}" STREQUAL "esp32h2")
+        set(ENV{ESP_MATTER_DEVICE_PATH} $ENV{ESP_MATTER_PATH}/device_hal/device/esp32h2_devkit_c)
+    elseif("${IDF_TARGET}" STREQUAL "esp32c6")
+        set(ENV{ESP_MATTER_DEVICE_PATH} $ENV{ESP_MATTER_PATH}/device_hal/device/esp32c6_devkit_c)
+    elseif("${IDF_TARGET}" STREQUAL "esp32c3")
+        set(ENV{ESP_MATTER_DEVICE_PATH} $ENV{ESP_MATTER_PATH}/device_hal/device/esp32c3_devkit_m)
+    elseif("${IDF_TARGET}" STREQUAL "esp32")
+        set(ENV{ESP_MATTER_DEVICE_PATH} $ENV{ESP_MATTER_PATH}/device_hal/device/esp32_devkit_c)
+    else()
+        message(FATAL_ERROR "Unsupported IDF_TARGET: ${IDF_TARGET}")
+    endif()
+endif()
+
+# --- Project version info ---
+set(PROJECT_VER "1.0")
+set(PROJECT_VER_NUMBER 1)
+
+# --- Paths ---
+set(ESP_MATTER_PATH $ENV{ESP_MATTER_PATH})
+set(MATTER_SDK_PATH ${ESP_MATTER_PATH}/connectedhomeip/connectedhomeip)
+
+# --- Core includes ---
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-include($ENV{ESP_MATTER_PATH}/esp_matter.cmake)
-include($ENV{ESP_MATTER_PATH}/connectedhomeip/connectedhomeip/config/esp32/components/chip/CMakeLists.txt)
+include($ENV{ESP_MATTER_DEVICE_PATH}/esp_matter_device.cmake)
+include(${ESP_MATTER_PATH}/examples/common/cmake_common/components_include.cmake)
 
+# --- Extra components ---
 set(EXTRA_COMPONENT_DIRS
     "${ESP_MATTER_PATH}/examples/common"
+    "${MATTER_SDK_PATH}/config/esp32/components"
     "${ESP_MATTER_PATH}/components"
-)
+    "${ESP_MATTER_PATH}/device_hal/device"
+    ${extra_components_dirs_append})
 
+# --- Define project ---
+set(PROJECT_NAME "gpio10_nmos")
 project(${PROJECT_NAME})
+
+# --- Compiler options ---
+idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H;-Wno-overloaded-virtual" APPEND)
+idf_build_set_property(C_COMPILE_OPTIONS "-Os" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security;-Wformat=0" APPEND)
