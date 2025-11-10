@@ -107,7 +107,11 @@ jobs:
 
           idf.py -C "$PROJECT_DIR" set-target esp32h2
           idf.py -C "$PROJECT_DIR" fullclean
-          idf.py -C "$PROJECT_DIR" build
+          idf.py -C "$PROJECT_DIR" build || (
+            echo "==== BUILD FAILED, SHOWING LAST 100 LINES OF ERROR LOG ===="
+            tail -n 100 "$PROJECT_DIR/build/log/idf_py_stderr_output_"* || true
+            exit 1
+          )
       - name: Debug:locate firmware binaries
         run: |
           echo "Current directory: $(pwd)"
