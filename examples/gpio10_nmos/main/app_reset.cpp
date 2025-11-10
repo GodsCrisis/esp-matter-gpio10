@@ -22,7 +22,7 @@ esp_err_t app_reset_button_register()
 {
     // Button v4.x configuration
     button_config_t button_config = {
-        .type = BUTTON_TYPE_GPIO,
+        .type = BUTTON_TYPE_USER,
         .long_press_time = FACTORY_RESET_TIMEOUT_MS,
         .short_press_time = 0,
         .gpio_button_config = {
