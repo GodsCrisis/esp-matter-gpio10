@@ -3,6 +3,7 @@
 #include <iot_button.h>
 #include <app_reset.h>
 #include <driver/gpio.h>
+#include <button_gpio.h>
 
 static const char *TAG = "app_reset";
 
