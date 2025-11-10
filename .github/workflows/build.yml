@@ -95,8 +95,7 @@ jobs:
           echo "Activating ESP-IDF + ESP-Matter..."
           source ~/esp/esp-idf/export.sh
           source ./export.sh
-          
-          PROJECT_DIR=$GITHUB_WORKSPACE/examples/all_device_types_app
+          PROJECT_DIR=$GITHUB_WORKSPACE/examples/gpio10_nmos
           echo "Building project at: $PROJECT_DIR"
           ls -la "$PROJECT_DIR"
           cat "$PROJECT_DIR/CMakeLists.txt" | head -n 10 || echo " No CMakeLists.txt found!"
@@ -109,9 +108,14 @@ jobs:
           find . -type f \( -name "*.bin" -o -name "*.elf" \) | sort
       - name: Prepare firmware info file
         run: |
-          mkdir -p examples/all_device_types_app/build
-          cat > examples/all_device_types_app/build/FLASH_INSTRUCTIONS.txt << 'EOF'
-          ESP32-H2 All Device Types App - Firmware Flash Instructions
+
+          mkdir -p examples/gpio10_nmos/build
+
+
+          cat > examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt << 'EOF'
+
+
+          ESP32-H2 GPIO10 NMOS Controller - Firmware Flash Instructions
           ============================================================
 
           Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
@@ -127,8 +131,8 @@ jobs:
           ==================
           - bootloader.bin
           - partition-table.bin
-          - all_device_types_app.bin
-          - all_device_types_app.elf
+          - gpio10_nmos.bin
+          - gpio10_nmos.elf
           EOF
       - name: Debug build output
         run: |
@@ -137,14 +141,14 @@ jobs:
       - name: Prepare and upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: all_device_types_app_firmware
+          name: gpio10_nmos_firmware
           path: |
-            examples/all_device_types_app/build/*.bin
-            examples/all_device_types_app/build/bootloader/*.bin
-            examples/all_device_types_app/build/partition_table/*.bin
-            examples/all_device_types_app/build/*.elf
-            examples/all_device_types_app/build/*.map
-            examples/all_device_types_app/build/FLASH_INSTRUCTIONS.txt
+            examples/gpio10_nmos/build/*.bin
+            examples/gpio10_nmos/build/bootloader/*.bin
+            examples/gpio10_nmos/build/partition_table/*.bin
+            examples/gpio10_nmos/build/*.elf
+            examples/gpio10_nmos/build/*.map
+            examples/gpio10_nmos/build/FLASH_INSTRUCTIONS.txt
       - name: Disable cache compression (prevent disk overflow)
         run: |
           echo "ACTIONS_CACHE_COMPRESSION_LEVEL=0" >> $GITHUB_ENV
