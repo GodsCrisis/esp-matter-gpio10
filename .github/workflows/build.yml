@@ -87,7 +87,7 @@ jobs:
           fi
       - name: Build Firmware
         run: |
-          set -e
+          set +e  # disable immediate exit so we can print logs on error
           echo "Deactivating any Pigweed or CHIP Python venv..."
           deactivate 2>/dev/null || true
           unset VIRTUAL_ENV PW_PROJECT_ROOT PW_ROOT PW_PACKAGE_ROOT
@@ -95,6 +95,7 @@ jobs:
           echo "Activating ESP-IDF + ESP-Matter..."
           source ~/esp/esp-idf/export.sh
           source ./export.sh
+
           export IDF_TARGET=esp32h2
           export ESP_MATTER_DEVICE_PATH=$GITHUB_WORKSPACE/device_hal/device/esp32h2_devkit_c
           echo "Using IDF_TARGET=$IDF_TARGET"
@@ -107,11 +108,17 @@ jobs:
 
           idf.py -C "$PROJECT_DIR" set-target esp32h2
           idf.py -C "$PROJECT_DIR" fullclean
-          idf.py -C "$PROJECT_DIR" build || (
-            echo "==== BUILD FAILED, SHOWING LAST 100 LINES OF ERROR LOG ===="
+          idf.py -C "$PROJECT_DIR" build
+          build_status=$?
+
+          echo "==== BUILD STATUS CODE: $build_status ===="
+
+          if [ $build_status -ne 0 ]; then
+            echo "==== BUILD FAILED, SHOWING LAST 100 LINES OF LOG ===="
             tail -n 100 "$PROJECT_DIR/build/log/idf_py_stderr_output_"* || true
-            exit 1
-          )
+            tail -n 50 "$PROJECT_DIR/build/log/idf_py_stdout_output_"* || true
+            exit $build_status
+          fi
       - name: Debug:locate firmware binaries
         run: |
           echo "Current directory: $(pwd)"
