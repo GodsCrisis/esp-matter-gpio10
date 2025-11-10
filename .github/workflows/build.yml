@@ -95,12 +95,18 @@ jobs:
           echo "Activating ESP-IDF + ESP-Matter..."
           source ~/esp/esp-idf/export.sh
           source ./export.sh
+          export IDF_TARGET=esp32h2
+          export ESP_MATTER_DEVICE_PATH=$GITHUB_WORKSPACE/device_hal/device/esp32h2_devkit_c
+          echo "Using IDF_TARGET=$IDF_TARGET"
+          echo "ESP_MATTER_DEVICE_PATH=$ESP_MATTER_DEVICE_PATH"
+
           PROJECT_DIR=$GITHUB_WORKSPACE/examples/gpio10_nmos
           echo "Building project at: $PROJECT_DIR"
           ls -la "$PROJECT_DIR"
           cat "$PROJECT_DIR/CMakeLists.txt" | head -n 10 || echo " No CMakeLists.txt found!"
 
           idf.py -C "$PROJECT_DIR" set-target esp32h2
+          idf.py -C "$PROJECT_DIR" fullclean
           idf.py -C "$PROJECT_DIR" build
       - name: Debug:locate firmware binaries
         run: |
