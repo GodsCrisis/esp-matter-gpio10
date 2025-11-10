@@ -19,8 +19,13 @@ static void app_reset_button_callback(void *arg, void *data)
 esp_err_t app_reset_button_register()
 {
     button_config_t button_config = {
-        .gpio_num = RESET_BUTTON_GPIO,
-        .active_level = 0,
+        .type = BUTTON_TYPE_GPIO,
+        .long_press_time = FACTORY_RESET_TIMEOUT_MS,
+        .short_press_time = 0,
+        .gpio_button_config = {
+            .gpio_num = RESET_BUTTON_GPIO,
+            .active_level = 0,
+        },
     };
 
     esp_err_t err = iot_button_create(&button_config, NULL, &button_handle);
@@ -29,7 +34,7 @@ esp_err_t app_reset_button_register()
         return ESP_FAIL;
     }
 
-    err = iot_button_register_cb(button_handle, BUTTON_LONG_PRESS_START, app_reset_button_callback, NULL);
+    err = iot_button_register_cb(button_handle, BUTTON_LONG_PRESS_START, NULL, app_reset_button_callback, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register button callback: %s", esp_err_to_name(err));
         return err;
