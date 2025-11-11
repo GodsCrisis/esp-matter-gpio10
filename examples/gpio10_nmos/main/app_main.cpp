@@ -173,6 +173,9 @@ extern "C" void app_main()
 
     app_create_endpoint();
 
+    #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+        esp_matter::set_custom_dac_provider(chip::Credentials::Examples::GetExampleDACProvider());
+    #endif
 
     err = esp_matter::start(nullptr);
     if (err != ESP_OK) {
